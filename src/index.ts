@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
+import path from 'path';
 import { config, validateConfig } from './config';
 import apiRoutes from './routes/api.routes';
 import { startSlackBot } from './slack/bot';
@@ -21,22 +22,11 @@ async function main() {
   app.use(cors());
   app.use(express.json());
 
-  // Routes
-  app.use('/api', apiRoutes);
+  // Serve static files from public folder
+  app.use(express.static(path.join(process.cwd(), 'public')));
 
-  // Root endpoint
-  app.get('/', (req, res) => {
-    res.json({
-      name: 'RAG AI API',
-      version: '1.0.0',
-      endpoints: {
-        upload: 'POST /api/upload',
-        query: 'POST /api/query',
-        documents: 'GET /api/documents',
-        health: 'GET /api/health',
-      },
-    });
-  });
+  // API Routes
+  app.use('/api', apiRoutes);
 
   // Start Express server
   app.listen(config.port, () => {

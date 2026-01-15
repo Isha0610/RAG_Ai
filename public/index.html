@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAG AI - Policy Assistant</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      color: #fff;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #00d9ff, #00ff88);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      color: #888;
+      font-size: 1.1rem;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .card h2 {
+      font-size: 1.2rem;
+      margin-bottom: 16px;
+      color: #00d9ff;
+    }
+
+    .upload-area {
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .upload-area:hover {
+      border-color: #00d9ff;
+      background: rgba(0, 217, 255, 0.05);
+    }
+
+    .upload-area input {
+      display: none;
+    }
+
+    .upload-area p {
+      color: #888;
+      margin-top: 10px;
+    }
+
+    .query-section {
+      display: flex;
+      gap: 12px;
+    }
+
+    .query-section input {
+      flex: 1;
+      padding: 16px 20px;
+      border: none;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-size: 1rem;
+    }
+
+    .query-section input::placeholder {
+      color: #666;
+    }
+
+    .query-section input:focus {
+      outline: 2px solid #00d9ff;
+    }
+
+    button {
+      padding: 16px 32px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(90deg, #00d9ff, #00ff88);
+      color: #000;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      opacity: 0.9;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .answer-box {
+      background: rgba(0, 255, 136, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 20px;
+      border-left: 4px solid #00ff88;
+      display: none;
+    }
+
+    .answer-box.visible {
+      display: block;
+    }
+
+    .answer-box h3 {
+      color: #00ff88;
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .answer-box p {
+      line-height: 1.6;
+      color: #ddd;
+    }
+
+    .sources {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .sources span {
+      display: inline-block;
+      background: rgba(0, 217, 255, 0.2);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    .documents-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .doc-tag {
+      background: rgba(0, 217, 255, 0.2);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .loading.visible {
+      display: block;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #00d9ff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .status {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    .status.success {
+      background: rgba(0, 255, 136, 0.2);
+      border: 1px solid #00ff88;
+      display: block;
+    }
+
+    .status.error {
+      background: rgba(255, 68, 68, 0.2);
+      border: 1px solid #ff4444;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>RAG AI</h1>
+      <p>Policy Document Assistant powered by Llama3</p>
+    </header>
+
+    <div class="card">
+      <h2>Upload Documents</h2>
+      <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#00d9ff" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        <p>Click to upload PDF files</p>
+        <input type="file" id="fileInput" accept=".pdf" onchange="uploadFile(this.files[0])">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Uploaded Documents</h2>
+      <div class="documents-list" id="documentsList">
+        <span style="color: #666;">Loading...</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Ask a Question</h2>
+      <div class="query-section">
+        <input type="text" id="questionInput" placeholder="e.g., What is the PTO policy?" onkeypress="if(event.key==='Enter')askQuestion()">
+        <button onclick="askQuestion()" id="askBtn">Ask</button>
+      </div>
+
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Searching documents...</p>
+      </div>
+
+      <div class="answer-box" id="answerBox">
+        <h3>Answer</h3>
+        <p id="answerText"></p>
+        <div class="sources" id="sources"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <script>
+    const API_URL = '';
+
+    async function loadDocuments() {
+      try {
+        const res = await fetch(`${API_URL}/api/documents`);
+        const data = await res.json();
+        const list = document.getElementById('documentsList');
+
+        if (data.documents && data.documents.length > 0) {
+          list.innerHTML = data.documents.map(doc =>
+            `<span class="doc-tag">${doc.name}</span>`
+          ).join('');
+        } else {
+          list.innerHTML = '<span style="color: #666;">No documents uploaded yet</span>';
+        }
+      } catch (err) {
+        console.error('Error loading documents:', err);
+      }
+    }
+
+    async function uploadFile(file) {
+      if (!file) return;
+
+      showStatus('Uploading...', 'success');
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await fetch(`${API_URL}/api/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showStatus(`Uploaded: ${data.documentName} (${data.chunksCreated} chunks)`, 'success');
+          loadDocuments();
+        } else {
+          showStatus(`Error: ${data.error}`, 'error');
+        }
+      } catch (err) {
+        showStatus('Upload failed', 'error');
+      }
+
+      document.getElementById('fileInput').value = '';
+    }
+
+    async function askQuestion() {
+      const input = document.getElementById('questionInput');
+      const question = input.value.trim();
+
+      if (!question) return;
+
+      const btn = document.getElementById('askBtn');
+      const loading = document.getElementById('loading');
+      const answerBox = document.getElementById('answerBox');
+
+      btn.disabled = true;
+      loading.classList.add('visible');
+      answerBox.classList.remove('visible');
+
+      try {
+        const res = await fetch(`${API_URL}/api/query`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          document.getElementById('answerText').textContent = data.answer;
+
+          const sources = document.getElementById('sources');
+          if (data.sources && data.sources.length > 0) {
+            const uniqueSources = [...new Set(data.sources.map(s => s.documentName))];
+            sources.innerHTML = '<strong>Sources:</strong> ' +
+              uniqueSources.map(s => `<span>${s}</span>`).join('');
+          } else {
+            sources.innerHTML = '';
+          }
+
+          answerBox.classList.add('visible');
+        } else {
+          showStatus(`Error: ${data.error}`, 'error');
+        }
+      } catch (err) {
+        showStatus('Query failed', 'error');
+      }
+
+      btn.disabled = false;
+      loading.classList.remove('visible');
+    }
+
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status ' + type;
+
+      setTimeout(() => {
+        status.className = 'status';
+      }, 3000);
+    }
+
+    // Load documents on page load
+    loadDocuments();
+  </script>
+</body>
+</html>
