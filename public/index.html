@@ -174,9 +174,35 @@
 
     .doc-tag {
       background: rgba(0, 217, 255, 0.2);
-      padding: 8px 16px;
+      padding: 8px 12px 8px 16px;
       border-radius: 20px;
       font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .doc-tag .delete-btn {
+      background: rgba(255, 68, 68, 0.3);
+      border: none;
+      color: #ff6b6b;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+      padding: 0;
+      transition: all 0.2s;
+    }
+
+    .doc-tag .delete-btn:hover {
+      background: rgba(255, 68, 68, 0.6);
+      color: #fff;
+      transform: scale(1.1);
     }
 
     .loading {
@@ -286,13 +312,40 @@
 
         if (data.documents && data.documents.length > 0) {
           list.innerHTML = data.documents.map(doc =>
-            `<span class="doc-tag">${doc.name}</span>`
+            `<span class="doc-tag">
+              ${doc.name}
+              <button class="delete-btn" onclick="deleteDocument('${doc.id}', '${doc.name}')" title="Delete document">&times;</button>
+            </span>`
           ).join('');
         } else {
           list.innerHTML = '<span style="color: #666;">No documents uploaded yet</span>';
         }
       } catch (err) {
         console.error('Error loading documents:', err);
+      }
+    }
+
+    async function deleteDocument(id, name) {
+      if (!confirm(`Are you sure you want to delete "${name}"?`)) {
+        return;
+      }
+
+      showStatus('Deleting...', 'success');
+
+      try {
+        const res = await fetch(`${API_URL}/api/documents/${id}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showStatus(`Deleted: ${name}`, 'success');
+          loadDocuments();
+        } else {
+          showStatus(`Error: ${data.error}`, 'error');
+        }
+      } catch (err) {
+        showStatus('Delete failed', 'error');
       }
     }
 

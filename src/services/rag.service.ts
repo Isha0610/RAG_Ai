@@ -1,6 +1,6 @@
 import { parsePdf, cleanupFile, ParsedDocument } from './pdf.service';
 import { generateChatResponse } from './embedding.service';
-import { addDocuments, searchSimilar, getDocumentList, SearchResult } from './vectordb.service';
+import { addDocuments, searchSimilar, getDocumentList, deleteDocument, SearchResult } from './vectordb.service';
 
 export interface UploadResult {
   success: boolean;
@@ -93,4 +93,16 @@ export async function queryKnowledgeBase(question: string): Promise<QueryResult>
 
 export async function listDocuments(): Promise<{ id: string; name: string }[]> {
   return getDocumentList();
+}
+
+export async function removeDocument(documentId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    await deleteDocument(documentId);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete document',
+    };
+  }
 }

@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import { config } from '../config';
-import { processAndStoreDocument, queryKnowledgeBase, listDocuments } from '../services/rag.service';
+import { processAndStoreDocument, queryKnowledgeBase, listDocuments, removeDocument } from '../services/rag.service';
 
 const router = Router();
 
@@ -94,6 +94,31 @@ router.get('/documents', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to list documents',
+    });
+  }
+});
+
+// DELETE /api/documents/:id - Delete a document
+router.delete('/documents/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      res.status(400).json({ success: false, error: 'Document ID is required' });
+      return;
+    }
+
+    const result = await removeDocument(id);
+
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete document',
     });
   }
 });
